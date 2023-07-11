@@ -5,7 +5,8 @@
 #include "threads/thread.h"
 
 static void syscall_handler (struct intr_frame *);
-static int memread_user (void *src, void *des, size_t bytes);
+// static int memread_user (void *src, void *des, size_t bytes);
+void sys_exit(int status);
 
 unsigned sys_tell(int fd);
 void
@@ -59,17 +60,29 @@ unsigned sys_tell(int fd) {
   return ret;
 }
 
-static int
-memread_user (void *src, void *dst, size_t bytes)
-{
-  int32_t value;
-  size_t i;
-  for(i=0; i<bytes; i++) {
-    value = get_user(src + i);
-    if(value == -1) 
-      fail_invalid_access();
+// static int
+// memread_user (void *src, void *dst, size_t bytes)
+// {
+//   int32_t value;
+//   size_t i;
+//   for(i=0; i<bytes; i++) {
+//     value = get_user(src + i);
+//     if(value == -1) 
+//       fail_invalid_access();
 
-    *(char*)(dst + i) = value & 0xff;
+//     *(char*)(dst + i) = value & 0xff;
+//   }
+//   return (int)bytes;
+// }
+
+void sys_exit(int status) {
+  printf("%s: exit(%d)\n", thread_current()->name, status);
+
+  struct process_control_block *pcb = thread_current()->pcb;
+  if(pcb != NULL) {
+    pcb->exited = true;
+    pcb->exitcode = status;
   }
-  return (int)bytes;
+
+  thread_exit();
 }
