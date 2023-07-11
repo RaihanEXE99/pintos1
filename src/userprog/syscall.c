@@ -5,6 +5,8 @@
 #include "threads/thread.h"
 
 static void syscall_handler (struct intr_frame *);
+static int memread_user (void *src, void *des, size_t bytes);
+
 unsigned sys_tell(int fd);
 void
 syscall_init (void) 
@@ -16,6 +18,8 @@ syscall_init (void)
 static void
 syscall_handler (struct intr_frame *f UNUSED)
 {
+  int syscall_number;
+
   switch (syscall_number) {
   case SYS_TELL: 
     {
@@ -53,4 +57,19 @@ unsigned sys_tell(int fd) {
 
   lock_release (&filesys_lock);
   return ret;
+}
+
+static int
+memread_user (void *src, void *dst, size_t bytes)
+{
+  int32_t value;
+  size_t i;
+  for(i=0; i<bytes; i++) {
+    value = get_user(src + i);
+    if(value == -1) 
+      fail_invalid_access();
+
+    *(char*)(dst + i) = value & 0xff;
+  }
+  return (int)bytes;
 }
